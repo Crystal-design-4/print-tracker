@@ -5,7 +5,7 @@
       "orderNo": "PRT-2026-001",
       "customer": "华彩文化传播有限公司",
       "designer": "张设计",
-      "status": "cancelled",
+      "status": "pending",
       "createdAt": "2026-07-28",
       "note": "企业画册24P，A4精装"
     },
@@ -115,6 +115,15 @@
       "designer": "大鱼",
       "status": "pending",
       "note": "氨基酸壶贴",
+      "createdAt": "2026-07-30"
+    },
+    {
+      "id": "ORD-ms7dim33-BYX4",
+      "orderNo": "PRT-20260730-02",
+      "customer": "丰禾",
+      "designer": "大鱼",
+      "status": "pending",
+      "note": "一款标签设计",
       "createdAt": "2026-07-30"
     }
   ]
