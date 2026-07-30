@@ -80,6 +80,7 @@ tbody tr.row-warning:hover{background:#fef3c7}
 .on{font-family:monospace;font-size:12px;color:var(--text-tertiary)}
 .cn{font-weight:600}
 .dn{color:var(--text-secondary)}
+.nn{font-size:12px;color:var(--text-secondary);word-break:break-all;line-height:1.4}
 .days{font-weight:700;font-size:13px}
 .days.urgent{color:var(--danger)}
 .days.warning{color:var(--warning)}
@@ -216,14 +217,14 @@ tbody tr.row-warning:hover{background:#fef3c7}
       <div style="overflow-x:auto">
         <table>
           <thead><tr>
-            <th onclick="sortBy('orderNo')">单号 <span class="sa">⇅</span></th>
-            <th onclick="sortBy('customer')">客户 <span class="sa">⇅</span></th>
-            <th onclick="sortBy('designer')">设计师 <span class="sa">⇅</span></th>
-            <th>备注</th>
-            <th onclick="sortBy('createdAt')">录入日期 <span class="sa">⇅</span></th>
-            <th onclick="sortBy('days')">天数 <span class="sa">⇅</span></th>
-            <th>状态</th>
-            <th>操作</th>
+            <th style="width:105px" onclick="sortBy('orderNo')">单号 <span class="sa">⇅</span></th>
+            <th style="width:120px" onclick="sortBy('customer')">客户 <span class="sa">⇅</span></th>
+            <th style="width:75px" onclick="sortBy('designer')">设计师 <span class="sa">⇅</span></th>
+            <th style="width:auto">备注</th>
+            <th style="width:95px" onclick="sortBy('createdAt')">录入日期 <span class="sa">⇅</span></th>
+            <th style="width:55px" onclick="sortBy('days')">天数 <span class="sa">⇅</span></th>
+            <th style="width:75px">状态</th>
+            <th style="width:130px">操作</th>
           </tr></thead>
           <tbody id="table-body"><tr><td colspan="8"><div class="loading"><div class="spinner"></div>加载中…</div></td></tr></tbody>
         </table>
@@ -367,7 +368,7 @@ function renderTable(){
   const list=getFiltered(),tbody=document.getElementById('table-body');
   document.getElementById('result-count').textContent=list.length+' 条记录';
   if(list.length===0){const labels={pending:'待定稿',urgent:'超时预警',confirmed:'已定稿',printing:'印刷中',done:'已完结',cancelled:'已取消'},label=labels[currentView]?'「'+labels[currentView]+'」':'';tbody.innerHTML='<tr><td colspan="8"><div class="empty"><div class="ee">'+(currentView==='urgent'?'🎉':'📭')+'</div><h3>'+(currentView==='urgent'?'没有超时预警，太棒了！':'暂无'+label+'订单')+'</h3><p>'+(currentView==='all'?'点击「新建订单」或按 <span class="kbd">Ctrl+N</span> 录入第一单':'切换视图查看更多')+'</p></div></td></tr>';updateAlerts();updateTimeHint();return}
-  tbody.innerHTML=list.map(o=>{const days=daysSince(o.createdAt);let rc='',dc='';if(o.status==='pending'){if(days>=7){rc='row-urgent';dc='urgent'}else if(days>=3){rc='row-warning';dc='warning'}else dc='normal'}else dc='normal';let acts='';if(o.status==='pending'){acts+='<button class="sbtn confirm-btn" onclick="quickStatus(\''+o.id+'\')">✅ 定稿</button>';acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>'}else if(o.status==='confirmed'){acts+='<button class="sbtn" onclick="doPatchStatus(\''+o.id+'\',\'printing\')">🖨️ 送印</button>';acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>'}else if(o.status==='printing'){acts+='<button class="sbtn confirm-btn" onclick="doPatchStatus(\''+o.id+'\',\'done\')">🎉 完结</button>';acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>'}else{acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>';if(o.status==='cancelled'||o.status==='done')acts+='<button class="sbtn" onclick="doPatchStatus(\''+o.id+'\',\'pending\')">🔄 恢复</button>'}return '<tr class="'+rc+'"><td class="on">'+esc(o.orderNo)+'</td><td class="cn">'+esc(o.customer)+'</td><td class="dn">'+esc(o.designer)+'</td><td>'+esc(o.note||'-')+'</td><td>'+o.createdAt+'</td><td class="days '+dc+'">'+days+'天</td><td><span class="badge '+STATUS_BADGES[o.status]+'">'+STATUS_LABELS[o.status]+'</span></td><td><div class="ag">'+acts+'</div></td></tr>'}).join('');updateAlerts();updateTimeHint()}
+  tbody.innerHTML=list.map(o=>{const days=daysSince(o.createdAt);let rc='',dc='';if(o.status==='pending'){if(days>=7){rc='row-urgent';dc='urgent'}else if(days>=3){rc='row-warning';dc='warning'}else dc='normal'}else dc='normal';let acts='';if(o.status==='pending'){acts+='<button class="sbtn confirm-btn" onclick="quickStatus(\''+o.id+'\')">✅ 定稿</button>';acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>'}else if(o.status==='confirmed'){acts+='<button class="sbtn" onclick="doPatchStatus(\''+o.id+'\',\'printing\')">🖨️ 送印</button>';acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>'}else if(o.status==='printing'){acts+='<button class="sbtn confirm-btn" onclick="doPatchStatus(\''+o.id+'\',\'done\')">🎉 完结</button>';acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>'}else{acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>';if(o.status==='cancelled'||o.status==='done')acts+='<button class="sbtn" onclick="doPatchStatus(\''+o.id+'\',\'pending\')">🔄 恢复</button>'}return '<tr class="'+rc+'"><td class="on">'+esc(o.orderNo)+'</td><td class="cn">'+esc(o.customer)+'</td><td class="dn">'+esc(o.designer)+'</td><td class="nn">'+esc(o.note||'-')+'</td><td>'+o.createdAt+'</td><td class="days '+dc+'">'+days+'天</td><td><span class="badge '+STATUS_BADGES[o.status]+'">'+STATUS_LABELS[o.status]+'</span></td><td><div class="ag">'+acts+'</div></td></tr>'}).join('');updateAlerts();updateTimeHint()}
 function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
 
 function updateAlerts(){
