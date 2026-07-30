@@ -118,12 +118,12 @@
       "createdAt": "2026-07-30"
     },
     {
-      "id": "ORD-ms7dim33-BYX4",
+      "id": "ORD-ms7dmjr2-DX49",
       "orderNo": "PRT-20260730-02",
       "customer": "丰禾",
       "designer": "大鱼",
-      "status": "printing",
-      "note": "一款标签设计",
+      "status": "pending",
+      "note": "标签设计",
       "createdAt": "2026-07-30"
     }
   ]
