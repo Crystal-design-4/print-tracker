@@ -290,21 +290,29 @@ function daysSince(d){return Math.floor((new Date()-new Date(d))/(86400000))}
 function genId(){return 'ORD-'+Date.now().toString(36)+'-'+Math.random().toString(36).substring(2,6).toUpperCase()}
 
 // ==================== API ====================
-async function loadData(){
+// silent=true 时不显示加载动画（用于后台轮询）
+async function loadData(silent){
   try{
-    // 优先用 raw URL 读取（无需 token，避免认证问题）
-    let r=await fetch(RAW_URL+'?t='+Date.now());
-    if(!r.ok)throw new Error('raw fetch failed: '+r.status);
-    let j=await r.json();
-    orders=j.orders||[];
+    let j;
+    if(TOKEN){
+      // 有 token：用 API 读取，实时无缓存
+      const r=await fetch(API_URL+'?t='+Date.now(),{headers:{Authorization:'token '+TOKEN}});
+      if(!r.ok)throw new Error('API fetch failed: '+r.status);
+      j=await r.json();
+      dataSha=j.sha;
+      orders=JSON.parse(atob(j.content)).orders||[];
+    }else{
+      // 无 token：用 raw 读取（有 CDN 缓存，几分钟延迟）
+      const r=await fetch(RAW_URL+'?t='+Date.now());
+      if(!r.ok)throw new Error('raw fetch failed: '+r.status);
+      j=await r.json();
+      orders=j.orders||[];
+    }
     if(orders.length===0)orders=seedData();
-    // 同时获取 SHA（写操作需要）
-    try{
-      if(TOKEN){r=await fetch(API_URL,{headers:{Authorization:'token '+TOKEN}});if(r.ok){j=await r.json();dataSha=j.sha}}
-    }catch(e){}
     renderTable();updateStats();
   }catch(e){
     console.error('加载失败:',e);
+    if(silent)return; // 轮询失败不提示
     // Fallback to localStorage
     try{
       const cached=localStorage.getItem('print_orders');
@@ -420,7 +428,10 @@ function toggleMobileNav(){document.getElementById('mobileNav').classList.toggle
 function showToast(m,t){const toast=document.getElementById('toast');toast.textContent=m;toast.className='toast '+(t||'');toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000)}
 
 // ==================== INIT ====================
-document.addEventListener('DOMContentLoaded',()=>{const d=new Date();document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefault();openAddModal()}if(e.key==='Escape'){closeModal();closeQuick();closeConfirm()}});document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal()});loadData()});
+document.addEventListener('DOMContentLoaded',()=>{const d=new Date();document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefault();openAddModal()}if(e.key==='Escape'){closeModal();closeQuick();closeConfirm()}});document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal()});loadData();
+  // 有 token 时自动轮询：每 15 秒刷新一次，实时同步他人数据
+  if(TOKEN){setInterval(()=>loadData(true),15000)}
+});
 </script>
 </body>
 </html>
