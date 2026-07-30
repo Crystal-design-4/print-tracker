@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>印刷跟单工作台</title>
+<style>
+:root{--bg:#f1f5f9;--card:#fff;--primary:#4f46e5;--primary-hover:#4338ca;--primary-light:#eef2ff;--danger:#dc2626;--danger-bg:#fef2f2;--danger-border:#fecaca;--warning:#d97706;--warning-bg:#fffbeb;--warning-border:#fde68a;--success:#059669;--success-bg:#ecfdf5;--text:#0f172a;--text-secondary:#475569;--text-tertiary:#94a3b8;--border:#e2e8f0;--radius:8px;--radius-lg:12px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh}
+.app-container{display:flex;min-height:100vh}
+.sidebar{width:250px;background:linear-gradient(180deg,#1e1b4b 0%,#312e81 50%,#4338ca 100%);color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;overflow-y:auto}
+.sidebar-brand{padding:24px 18px 18px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sidebar-brand .logo{font-size:30px;display:block;margin-bottom:6px}
+.sidebar-brand h1{font-size:17px;font-weight:700}
+.sidebar-brand .sub{font-size:11px;opacity:.5;margin-top:2px}
+.sidebar-stats{padding:12px 14px;display:flex;flex-direction:column;gap:6px}
+.stat-card{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:12px;cursor:pointer;transition:background .15s;border:1px solid transparent}
+.stat-card:hover,.stat-card.active{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.2)}
+.stat-card .sr{display:flex;justify-content:space-between;align-items:center}
+.stat-card .sn{font-size:26px;font-weight:800;line-height:1}
+.stat-card .sl{font-size:11px;opacity:.6;margin-top:2px}
+.stat-card .si{font-size:20px;opacity:.5}
+.stat-card.danger .sn{color:#fca5a5}
+.stat-card.warning .sn{color:#fcd34d}
+.stat-card.success .sn{color:#6ee7b7}
+.sidebar-menu{padding:8px 10px;flex:1;display:flex;flex-direction:column;gap:1px}
+.menu-item{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:var(--radius);color:rgba(255,255,255,.65);cursor:pointer;font-size:13px;font-weight:500;border:none;background:none;width:100%;text-align:left;transition:all .15s}
+.menu-item:hover{background:rgba(255,255,255,.1);color:#fff}
+.menu-item.active{background:rgba(255,255,255,.15);color:#fff;font-weight:600}
+.menu-item .ic{font-size:16px;width:20px;text-align:center}
+.menu-item .ct{margin-left:auto;background:var(--danger);color:#fff;font-size:10px;min-width:18px;height:18px;line-height:18px;border-radius:9px;text-align:center;padding:0 5px;font-weight:700;display:none}
+.sidebar-footer{padding:10px 14px;border-top:1px solid rgba(255,255,255,.1);font-size:10px;opacity:.35;text-align:center}
+.main{flex:1;margin-left:250px;padding:24px 28px;min-height:100vh}
+.main-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.main-header h2{font-size:21px;font-weight:700;display:flex;align-items:center;gap:8px}
+.date-display{font-size:13px;color:var(--text-secondary);font-weight:400}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:#fff;color:var(--text-secondary);transition:all .15s;white-space:nowrap}
+.btn:hover{background:#f8fafc}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-outline{background:transparent;color:var(--primary);border-color:var(--primary)}
+.btn-outline:hover{background:var(--primary-light)}
+.btn-sm{padding:5px 10px;font-size:12px}
+.kbd{display:inline-block;background:#f1f5f9;border:1px solid var(--border);border-radius:4px;padding:1px 5px;font-size:10px;font-family:monospace;color:var(--text-tertiary)}
+.alert-row{display:flex;gap:10px;margin-bottom:18px}
+.alert-card{flex:1;border-radius:var(--radius-lg);padding:13px 15px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px solid;transition:box-shadow .2s}
+.alert-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.06)}
+.alert-card.urgent{background:var(--danger-bg);border-color:var(--danger-border);animation:pulse-red 2s ease-in-out infinite}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,.12)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0)}}
+.alert-card.overdue{background:var(--warning-bg);border-color:var(--warning-border)}
+.alert-card .ae{font-size:26px}
+.alert-card .ai h3{font-size:14px;font-weight:700;margin-bottom:1px}
+.alert-card .ai p{font-size:11px;color:var(--text-secondary)}
+.alert-card.urgent .ai h3{color:var(--danger)}
+.alert-card.overdue .ai h3{color:var(--warning)}
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap}
+.toolbar-l{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.search-box{position:relative;width:220px}
+.search-box input{width:100%;padding:8px 12px 8px 32px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:#fff;transition:all .2s}
+.search-box input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.search-box .si{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--text-tertiary)}
+.filter-select{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;background:#fff;cursor:pointer;color:var(--text);min-width:100px}
+.filter-select:focus{outline:none;border-color:var(--primary)}
+.table-wrapper{background:var(--card);border-radius:var(--radius-lg);box-shadow:0 1px 3px rgba(0,0,0,.06);overflow:hidden}
+.table-header-bar{display:flex;align-items:center;justify-content:space-between;padding:11px 15px;border-bottom:1px solid #f1f5f9}
+.table-header-bar .tt{font-size:13px;font-weight:600;color:var(--text-secondary)}
+.table-header-bar .rc{font-size:11px;color:var(--text-tertiary)}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:left;padding:9px 12px;font-size:11px;font-weight:600;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:.3px;background:#fafbfc;border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+thead th:hover{color:var(--text-secondary)}
+thead th .sa{font-size:9px;margin-left:2px}
+tbody td{padding:9px 12px;font-size:13px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+tbody tr{transition:background .1s}
+tbody tr:hover{background:#f8fafc}
+tbody tr.row-urgent{background:#fef2f2;border-left:3px solid var(--danger)}
+tbody tr.row-urgent:hover{background:#fee2e2}
+tbody tr.row-warning{background:#fffbeb;border-left:3px solid var(--warning)}
+tbody tr.row-warning:hover{background:#fef3c7}
+.on{font-family:monospace;font-size:12px;color:var(--text-tertiary)}
+.cn{font-weight:600}
+.dn{color:var(--text-secondary)}
+.days{font-weight:700;font-size:13px}
+.days.urgent{color:var(--danger)}
+.days.warning{color:var(--warning)}
+.days.normal{color:var(--success)}
+.badge{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:700;padding:3px 8px;border-radius:12px;white-space:nowrap}
+.badge-pending{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.badge-confirmed{background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.badge-printing{background:#dbeafe;color:#1e40af;border:1px solid #bfdbfe}
+.badge-done{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
+.badge-cancelled{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
+.ag{display:flex;gap:4px;flex-wrap:wrap}
+.sbtn{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:#fff;cursor:pointer;font-weight:500;color:var(--text-secondary);white-space:nowrap;transition:all .1s}
+.sbtn:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary)}
+.sbtn.confirm-btn:hover{background:var(--success-bg);color:var(--success);border-color:var(--success)}
+.sbtn.edit-btn:hover{background:#fef3c7;color:var(--warning);border-color:var(--warning)}
+.empty{padding:50px 20px;text-align:center}
+.empty .ee{font-size:48px;margin-bottom:12px}
+.empty h3{font-size:15px;color:var(--text-secondary);margin-bottom:6px}
+.empty p{font-size:13px;color:var(--text-tertiary);margin-bottom:16px}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px);z-index:500;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;width:460px;max-width:94vw;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);animation:modalIn .2s ease-out}
+@keyframes modalIn{from{opacity:0;transform:scale(.95) translateY(10px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:18px 22px 0}
+.modal-header h2{font-size:17px;font-weight:700}
+.modal-close{width:30px;height:30px;border:none;background:#f1f5f9;border-radius:50%;font-size:16px;cursor:pointer;color:var(--text-secondary);display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:#e2e8f0}
+.modal-body{padding:16px 22px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;font-weight:600;margin-bottom:5px;color:var(--text)}
+.form-group label .req{color:var(--danger);margin-left:2px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;font-family:inherit;background:#fff;color:var(--text);transition:border-color .2s,box-shadow .2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.1)}
+.form-group textarea{resize:vertical;min-height:56px}
+.form-row{display:flex;gap:10px}
+.form-row .form-group{flex:1}
+.form-actions{display:flex;gap:10px;margin-top:6px;padding-top:14px;border-top:1px solid #f1f5f9}
+.btn-submit{flex:1;padding:10px;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;background:var(--primary);color:#fff}
+.btn-submit:hover{background:var(--primary-hover)}
+.btn-cancel{padding:10px 18px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;font-weight:500;cursor:pointer;background:#fff;color:var(--text-secondary)}
+.btn-cancel:hover{background:#f8fafc}
+.qp{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;width:380px;max-width:92vw;padding:20px;z-index:500;box-shadow:0 20px 60px rgba(0,0,0,.15);display:none}
+.qp.show{display:block}
+.qp h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.qp .qi{font-size:12px;color:var(--text-secondary);margin-bottom:12px}
+.qp .qa{display:flex;flex-direction:column;gap:6px}
+.qbtn{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);background:#fff;cursor:pointer;font-size:13px;text-align:left;width:100%;transition:all .15s}
+.qbtn:hover{border-color:var(--primary);background:var(--primary-light)}
+.qp .qp-foot{margin-top:14px;text-align:right;display:flex;justify-content:flex-end;gap:8px}
+.confirm-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:600;display:none;align-items:center;justify-content:center}
+.confirm-overlay.show{display:flex}
+.confirm-box{background:#fff;border-radius:16px;padding:22px;width:320px;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.15)}
+.confirm-box .ce{font-size:32px;margin-bottom:10px}
+.confirm-box h3{font-size:15px;margin-bottom:6px}
+.confirm-box p{font-size:12px;color:var(--text-secondary);margin-bottom:18px}
+.confirm-actions{display:flex;gap:8px}
+.confirm-actions button{flex:1;padding:9px;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:#fff}
+.confirm-actions .btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.confirm-actions .btn-danger:hover{background:#b91c1c}
+.toast{position:fixed;top:20px;right:20px;background:#0f172a;color:#fff;padding:11px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;z-index:700;opacity:0;transform:translateX(16px);transition:all .25s;pointer-events:none;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateX(0)}
+.toast.success{background:#059669}
+.menu-toggle{display:none;position:fixed;bottom:20px;left:20px;z-index:200;width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;border:none;font-size:20px;cursor:pointer;box-shadow:0 4px 12px rgba(79,70,229,.35);align-items:center;justify-content:center}
+.mobile-nav{display:none;position:fixed;inset:0;z-index:400;pointer-events:none}
+.mobile-nav.show{pointer-events:auto}
+.mobile-nav .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4);opacity:0;transition:opacity .2s}
+.mobile-nav.show .backdrop{opacity:1}
+.mobile-nav .drawer{position:absolute;left:0;top:0;bottom:0;width:260px;background:linear-gradient(180deg,#1e1b4b 0%,#312e81 50%,#4338ca 100%);color:#fff;transform:translateX(-100%);transition:transform .25s ease;overflow-y:auto;display:flex;flex-direction:column}
+.mobile-nav.show .drawer{transform:translateX(0)}
+.loading{display:flex;align-items:center;justify-content:center;padding:30px;color:var(--text-tertiary);gap:8px}
+.spinner{width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:3px}
+@media (max-width:860px){.sidebar{display:none}.main{margin-left:0;padding:14px 12px 80px}.menu-toggle{display:flex}.mobile-nav{display:block}.toolbar{flex-direction:column;align-items:stretch}.toolbar-l{flex-direction:column}.search-box{width:100%}.table-wrapper{overflow-x:auto}table{min-width:650px}.alert-row{flex-direction:column}.main-header h2{font-size:18px}.modal{max-width:96vw;border-radius:16px 16px 0 0;margin-top:auto}.modal-overlay{align-items:flex-end}.form-row{flex-direction:column;gap:0}}
+</style>
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand"><span class="logo">🖨️</span><h1>印刷跟单工作台</h1><div class="sub">Design Print Tracker</div></div>
+    <div class="sidebar-stats">
+      <div class="stat-card" onclick="switchView('all')" data-stat="all"><div class="sr"><span class="sn" id="count-all">0</span><span class="si">📋</span></div><div class="sl">全部订单</div></div>
+      <div class="stat-card warning" onclick="switchView('pending')" data-stat="pending"><div class="sr"><span class="sn" id="count-pending">0</span><span class="si">⏳</span></div><div class="sl">待定稿</div></div>
+      <div class="stat-card danger" onclick="switchView('urgent')" data-stat="urgent"><div class="sr"><span class="sn" id="count-urgent">0</span><span class="si">🔴</span></div><div class="sl">超7天未定</div></div>
+      <div class="stat-card success" onclick="switchView('done')" data-stat="done"><div class="sr"><span class="sn" id="count-done">0</span><span class="si">✅</span></div><div class="sl">本月完结</div></div>
+    </div>
+    <nav class="sidebar-menu">
+      <button class="menu-item active" onclick="switchView('all')" data-v="all"><span class="ic">📊</span>全部订单</button>
+      <button class="menu-item" onclick="switchView('pending')" data-v="pending"><span class="ic">⏳</span>待定稿清单<span class="ct" id="mc-pending">0</span></button>
+      <button class="menu-item" onclick="switchView('urgent')" data-v="urgent"><span class="ic">🔴</span>超时预警<span class="ct" id="mc-urgent">0</span></button>
+      <button class="menu-item" onclick="switchView('confirmed')" data-v="confirmed"><span class="ic">📝</span>已定稿</button>
+      <button class="menu-item" onclick="switchView('printing')" data-v="printing"><span class="ic">🖨️</span>印刷中</button>
+      <button class="menu-item" onclick="switchView('done')" data-v="done"><span class="ic">✅</span>已完结</button>
+      <button class="menu-item" onclick="switchView('cancelled')" data-v="cancelled"><span class="ic">❌</span>已取消</button>
+    </nav>
+    <div class="sidebar-footer">数据云端同步 · <span class="kbd" style="color:inherit">Ctrl+N</span> 新增</div>
+  </aside>
+  <main class="main">
+    <div class="main-header">
+      <h2><span id="view-icon">📊</span><span id="view-title">全部订单</span><span class="date-display" id="today-date"></span></h2>
+      <button class="btn btn-primary" onclick="openAddModal()">＋ 新建订单 <span class="kbd" style="background:rgba(255,255,255,.2);color:inherit;border:none">Ctrl+N</span></button>
+    </div>
+    <div class="alert-row" id="alert-row" style="display:none">
+      <div class="alert-card urgent" id="alert-urgent" onclick="switchView('urgent')" style="display:none"><span class="ae">🚨</span><div class="ai"><h3 id="alert-urgent-title"></h3><p>超过7天未定稿，需马上跟进！</p></div></div>
+      <div class="alert-card overdue" id="alert-overdue" onclick="switchView('pending')" style="display:none"><span class="ae">📌</span><div class="ai"><h3 id="alert-overdue-title"></h3><p>超过3天未定稿，建议今天联系客户</p></div></div>
+    </div>
+    <div class="toolbar">
+      <div class="toolbar-l">
+        <div class="search-box"><span class="si">🔍</span><input type="text" id="searchInput" placeholder="搜索单号、客户、设计师…" oninput="renderTable()"></div>
+        <select class="filter-select" id="designerFilter" onchange="renderTable()"><option value="">全部设计师</option></select>
+        <select class="filter-select" id="statusFilter" onchange="switchView(this.value)"><option value="all">全部状态</option><option value="pending">待定稿</option><option value="confirmed">已定稿</option><option value="printing">印刷中</option><option value="done">已完结</option><option value="cancelled">已取消</option><option value="urgent">超时预警</option></select>
+      </div>
+      <div>
+        <button class="btn btn-outline btn-sm" onclick="exportCSV()">📥 导出CSV</button>
+        <button class="btn btn-sm" onclick="loadData()">🔄 刷新</button>
+      </div>
+    </div>
+    <div class="toolbar" style="margin-top:-8px">
+      <div class="toolbar-l">
+        <select class="filter-select" id="yearFilter" onchange="onYearChange()"><option value="">全部年份</option></select>
+        <select class="filter-select" id="monthFilter" onchange="renderTable()"><option value="">全部月份</option></select>
+        <span style="font-size:12px;color:var(--text-tertiary);margin:0 4px">或</span>
+        <input type="date" id="dateFrom" class="filter-select" style="width:140px" onchange="renderTable()" title="起始日期">
+        <span style="font-size:12px;color:var(--text-tertiary)">至</span>
+        <input type="date" id="dateTo" class="filter-select" style="width:140px" onchange="renderTable()" title="截止日期">
+        <button class="btn btn-sm" onclick="clearTimeFilter()" style="font-size:11px;padding:5px 8px">✕ 清除</button>
+        <span style="font-size:11px;color:var(--text-tertiary);margin-left:4px" id="timeFilterHint"></span>
+      </div>
+    </div>
+    <div class="table-wrapper">
+      <div class="table-header-bar"><span class="tt" id="table-title">全部订单</span><span class="rc" id="result-count">0 条记录</span></div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead><tr>
+            <th onclick="sortBy('orderNo')">单号 <span class="sa">⇅</span></th>
+            <th onclick="sortBy('customer')">客户 <span class="sa">⇅</span></th>
+            <th onclick="sortBy('designer')">设计师 <span class="sa">⇅</span></th>
+            <th onclick="sortBy('createdAt')">录入日期 <span class="sa">⇅</span></th>
+            <th onclick="sortBy('days')">天数 <span class="sa">⇅</span></th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr></thead>
+          <tbody id="table-body"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>加载中…</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+<button class="menu-toggle" id="menuToggle" onclick="toggleMobileNav()">☰</button>
+<div class="mobile-nav" id="mobileNav"><div class="backdrop" onclick="toggleMobileNav()"></div><div class="drawer" id="mobileDrawer"></div></div>
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h2 id="modal-title">新建订单</h2><button class="modal-close" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <form id="order-form" onsubmit="saveOrder(event)">
+        <input type="hidden" id="edit-id">
+        <div class="form-row"><div class="form-group"><label>单号 <span class="req">*</span></label><input type="text" id="orderNo" placeholder="如: PRT-2026-001" required></div><div class="form-group"><label>状态</label><select id="status"><option value="pending">待定稿</option><option value="confirmed">已定稿</option><option value="printing">印刷中</option><option value="done">已完结</option><option value="cancelled">已取消</option></select></div></div>
+        <div class="form-row"><div class="form-group"><label>客户 <span class="req">*</span></label><input type="text" id="customer" placeholder="客户公司/姓名" required></div><div class="form-group"><label>设计师 <span class="req">*</span></label><input type="text" id="designer" placeholder="设计师姓名" list="designer-list" required><datalist id="designer-list"></datalist></div></div>
+        <div class="form-group"><label>备注</label><textarea id="note" placeholder="设计内容、客户需求、跟进记录…"></textarea></div>
+        <div class="form-actions"><button type="button" class="btn-cancel" onclick="closeModal()">取消</button><button type="submit" class="btn-submit" id="submit-btn">保存订单</button></div>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="qp" id="quickPanel">
+  <h3>更改订单状态</h3><div class="qi" id="quickInfo"></div>
+  <div class="qa">
+    <button class="qbtn" onclick="quickChange('pending')">⏳ 标记为「待定稿」</button>
+    <button class="qbtn" onclick="quickChange('confirmed')">✅ 标记为「已定稿」</button>
+    <button class="qbtn" onclick="quickChange('printing')">🖨️ 标记为「印刷中」</button>
+    <button class="qbtn" onclick="quickChange('done')">🎉 标记为「已完结」</button>
+    <button class="qbtn" onclick="quickChange('cancelled')" style="color:var(--danger)">❌ 标记为「已取消」</button>
+  </div>
+  <div class="qp-foot"><button class="btn btn-sm" onclick="closeQuick()">关闭</button><button class="btn btn-sm btn-outline" onclick="openEditFromQuick()" style="margin-left:6px">📝 编辑详情</button></div>
+</div>
+<div class="modal-overlay" id="quick-overlay" onclick="closeQuick()"></div>
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box"><div class="ce" id="confirm-emoji">⚠️</div><h3 id="confirm-title"></h3><p id="confirm-message"></p><div class="confirm-actions"><button onclick="closeConfirm()">取消</button><button class="btn-danger" id="confirm-btn" onclick="execConfirm()">确认</button></div></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ==================== GITHUB DATA STORE ====================
+const REPO = 'Crystal-design-4/print-tracker';
+const DATA_FILE = 'data.json';
+// Token is embedded for Vercel deployment. For local dev, can be overridden.
+// Token 通过 URL 参数 ?token=xxx 传入，或通过 Vercel 环境变量注入
+const TOKEN = new URLSearchParams(location.search).get('token') || 'YOUR_GITHUB_TOKEN';
+const API_BASE = `https://api.github.com/repos/${REPO}/contents/${DATA_FILE}`;
+
+let orders = [];
+let currentView = 'all';
+let currentSort = { field: 'createdAt', asc: false };
+let quickEditId = null;
+let confirmCb = null;
+let dataSha = null; // SHA of data.json for updates
+
+const STATUS_LABELS = {pending:'待定稿',confirmed:'已定稿',printing:'印刷中',done:'已完结',cancelled:'已取消'};
+const STATUS_BADGES = {pending:'badge-pending',confirmed:'badge-confirmed',printing:'badge-printing',done:'badge-done',cancelled:'badge-cancelled'};
+const VIEW_TITLES = {all:['📊','全部订单'],pending:['⏳','待定稿清单'],urgent:['🔴','超时预警 · 7天以上未定'],confirmed:['📝','已定稿订单'],printing:['🖨️','印刷中订单'],done:['✅','已完结订单'],cancelled:['❌','已取消订单']};
+
+function daysSince(d){return Math.floor((new Date()-new Date(d))/(86400000))}
+function genId(){return 'ORD-'+Date.now().toString(36)+'-'+Math.random().toString(36).substring(2,6).toUpperCase()}
+
+// ==================== API ====================
+async function loadData(){
+  try{
+    const r=await fetch(API_BASE,{headers:{Authorization:'token '+TOKEN}});
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    const j=await r.json();
+    dataSha=j.sha;
+    const content=JSON.parse(atob(j.content));
+    orders=content.orders||[];
+    if(orders.length===0)orders=seedData();
+    renderTable();updateStats();
+  }catch(e){
+    console.error('加载失败:',e);
+    // Fallback to localStorage
+    try{
+      const cached=localStorage.getItem('print_orders');
+      if(cached){orders=JSON.parse(cached);renderTable();updateStats();showToast('离线模式 · 数据来自本地缓存','')}
+      else{orders=seedData();saveToGitHub();renderTable();updateStats()}
+    }catch(e2){document.getElementById('table-body').innerHTML='<tr><td colspan="7"><div class="empty"><div class="ee">⚠️</div><h3>无法加载数据</h3><p>请检查网络后点击刷新</p></div></td></tr>'}
+  }
+}
+
+function seedData(){
+  const designers=['张设计','李设计','王设计','赵设计'];
+  const customers=['华彩文化传播有限公司','瑞丰印务集团','明日之星教育','绿叶有机食品','金鼎地产','阳光百货','蓝图广告','星辰科技','远航物流','锦绣纺织','鼎丰商贸','美佳家居'];
+  const notes=['企业画册24P，A4精装','产品包装盒设计，3款方案','品牌VI手册更新','宣传折页三折页','名片+信封+信纸套装','海报设计80×120cm','产品目录48P','展会背景板设计','手提袋设计','台历设计2026款','邀请函设计','会员卡设计'];
+  const statuses=['pending','pending','pending','pending','pending','confirmed','confirmed','printing','done','done','cancelled','pending'];
+  const result=[];
+  for(let i=0;i<12;i++){
+    const d=new Date();d.setDate(d.getDate()-((i*3+1)%28+1));
+    result.push({id:genId(),orderNo:'PRT-2026-'+(i+1).toString().padStart(3,'0'),customer:customers[i],designer:designers[i%4],status:statuses[i],createdAt:d.toISOString().split('T')[0],note:notes[i]});
+  }
+  return result;
+}
+
+async function saveToGitHub(){
+  const content=btoa(unescape(encodeURIComponent(JSON.stringify({orders:orders},null,2))));
+  const body={message:'更新订单数据',content:content};
+  if(dataSha)body.sha=dataSha;
+  try{
+    const r=await fetch(API_BASE,{method:'PUT',headers:{Authorization:'token '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json();
+    if(j.content)dataSha=j.content.sha;
+    // Also cache locally
+    localStorage.setItem('print_orders',JSON.stringify(orders));
+  }catch(e){console.error('保存失败:',e);showToast('保存失败，请重试','')}
+}
+
+// ==================== RENDER ====================
+function getFiltered(){
+  let list=[...orders];
+  if(currentView==='pending')list=list.filter(o=>o.status==='pending');
+  else if(currentView==='urgent')list=list.filter(o=>o.status==='pending'&&daysSince(o.createdAt)>=7);
+  else if(currentView==='confirmed')list=list.filter(o=>o.status==='confirmed');
+  else if(currentView==='printing')list=list.filter(o=>o.status==='printing');
+  else if(currentView==='done')list=list.filter(o=>o.status==='done');
+  else if(currentView==='cancelled')list=list.filter(o=>o.status==='cancelled');
+  const s=document.getElementById('searchInput').value.toLowerCase().trim();
+  if(s)list=list.filter(o=>(o.orderNo||'').toLowerCase().includes(s)||(o.customer||'').toLowerCase().includes(s)||(o.designer||'').toLowerCase().includes(s)||(o.note||'').toLowerCase().includes(s));
+  const df=document.getElementById('designerFilter').value;
+  if(df)list=list.filter(o=>o.designer===df);
+  const year=document.getElementById('yearFilter').value,month=document.getElementById('monthFilter').value,from=document.getElementById('dateFrom').value,to=document.getElementById('dateTo').value;
+  if(from||to){if(from)list=list.filter(o=>o.createdAt>=from);if(to)list=list.filter(o=>o.createdAt<=to)}
+  else if(year||month){if(year)list=list.filter(o=>o.createdAt.startsWith(year));if(month)list=list.filter(o=>o.createdAt.substring(5,7)===month.padStart(2,'0'))}
+  list.sort((a,b)=>{
+    let va,vb;
+    switch(currentSort.field){case 'days':va=daysSince(a.createdAt);vb=daysSince(b.createdAt);break;case 'createdAt':va=a.createdAt;vb=b.createdAt;break;case 'orderNo':va=a.orderNo;vb=b.orderNo;break;case 'customer':va=a.customer;vb=b.customer;break;case 'designer':va=a.designer;vb=b.designer;break;default:va=a.createdAt;vb=b.createdAt}
+    return currentSort.asc?(va<vb?-1:va>vb?1:0):(va>vb?-1:va<vb?1:0);
+  });
+  return list;
+}
+
+function renderTable(){
+  const list=getFiltered(),tbody=document.getElementById('table-body');
+  document.getElementById('result-count').textContent=list.length+' 条记录';
+  if(list.length===0){const labels={pending:'待定稿',urgent:'超时预警',confirmed:'已定稿',printing:'印刷中',done:'已完结',cancelled:'已取消'},label=labels[currentView]?'「'+labels[currentView]+'」':'';tbody.innerHTML='<tr><td colspan="7"><div class="empty"><div class="ee">'+(currentView==='urgent'?'🎉':'📭')+'</div><h3>'+(currentView==='urgent'?'没有超时预警，太棒了！':'暂无'+label+'订单')+'</h3><p>'+(currentView==='all'?'点击「新建订单」或按 <span class="kbd">Ctrl+N</span> 录入第一单':'切换视图查看更多')+'</p></div></td></tr>';updateAlerts();updateTimeHint();return}
+  tbody.innerHTML=list.map(o=>{const days=daysSince(o.createdAt);let rc='',dc='';if(o.status==='pending'){if(days>=7){rc='row-urgent';dc='urgent'}else if(days>=3){rc='row-warning';dc='warning'}else dc='normal'}else dc='normal';let acts='';if(o.status==='pending'){acts+='<button class="sbtn confirm-btn" onclick="quickStatus(\''+o.id+'\')">✅ 定稿</button>';acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>'}else if(o.status==='confirmed'){acts+='<button class="sbtn" onclick="doPatchStatus(\''+o.id+'\',\'printing\')">🖨️ 送印</button>';acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>'}else if(o.status==='printing'){acts+='<button class="sbtn confirm-btn" onclick="doPatchStatus(\''+o.id+'\',\'done\')">🎉 完结</button>';acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>'}else{acts+='<button class="sbtn edit-btn" onclick="openEditModal(\''+o.id+'\')">✏️ 编辑</button>';if(o.status==='cancelled'||o.status==='done')acts+='<button class="sbtn" onclick="doPatchStatus(\''+o.id+'\',\'pending\')">🔄 恢复</button>'}return '<tr class="'+rc+'"><td class="on">'+esc(o.orderNo)+'</td><td class="cn">'+esc(o.customer)+'</td><td class="dn">'+esc(o.designer)+'</td><td>'+o.createdAt+'</td><td class="days '+dc+'">'+days+'天</td><td><span class="badge '+STATUS_BADGES[o.status]+'">'+STATUS_LABELS[o.status]+'</span></td><td><div class="ag">'+acts+'</div></td></tr>'}).join('');updateAlerts();updateTimeHint()}
+function esc(s){const d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+
+function updateAlerts(){
+  const pending=orders.filter(o=>o.status==='pending'),urgentC=pending.filter(o=>daysSince(o.createdAt)>=7).length,overdueC=pending.filter(o=>daysSince(o.createdAt)>=3&&daysSince(o.createdAt)<7).length,row=document.getElementById('alert-row'),au=document.getElementById('alert-urgent'),ao=document.getElementById('alert-overdue');
+  if(urgentC>0){au.style.display='';document.getElementById('alert-urgent-title').textContent=urgentC+' 个订单超过7天未定稿';row.style.display=''}else au.style.display='none';if(overdueC>0){ao.style.display='';document.getElementById('alert-overdue-title').textContent=overdueC+' 个订单超过3天未定稿';row.style.display=''}else ao.style.display='none';if(urgentC===0&&overdueC===0)row.style.display='none'}
+
+function updateStats(){
+  const pending=orders.filter(o=>o.status==='pending'),urgent=pending.filter(o=>daysSince(o.createdAt)>=7),now=new Date(),doneM=orders.filter(o=>o.status==='done'&&new Date(o.createdAt).getMonth()===now.getMonth()&&new Date(o.createdAt).getFullYear()===now.getFullYear());
+  document.getElementById('count-all').textContent=orders.length;document.getElementById('count-pending').textContent=pending.length;document.getElementById('count-urgent').textContent=urgent.length;document.getElementById('count-done').textContent=doneM.length;
+  const pc=document.getElementById('mc-pending'),uc=document.getElementById('mc-urgent');pc.style.display=pending.length?'':'none';pc.textContent=pending.length;uc.style.display=urgent.length?'':'none';uc.textContent=urgent.length;
+  const designers=[...new Set(orders.map(o=>o.designer).filter(Boolean))].sort(),ds=document.getElementById('designerFilter');ds.innerHTML='<option value="">全部设计师</option>'+designers.map(d=>'<option value="'+d+'">'+d+'</option>').join('');document.getElementById('designer-list').innerHTML=designers.map(d=>'<option value="'+d+'">').join('');buildYearOptions()}
+
+function buildYearOptions(){const years=[...new Set(orders.map(o=>o.createdAt.substring(0,4)).filter(Boolean))].sort(),sel=document.getElementById('yearFilter');sel.innerHTML='<option value="">全部年份</option>'+years.map(y=>'<option value="'+y+'">'+y+'年</option>').join('')}
+function onYearChange(){const year=document.getElementById('yearFilter').value,ms=document.getElementById('monthFilter');if(!year){ms.innerHTML='<option value="">全部月份</option>';renderTable();return}const months=[...new Set(orders.filter(o=>o.createdAt.startsWith(year)).map(o=>parseInt(o.createdAt.substring(5,7))))].sort((a,b)=>a-b);ms.innerHTML='<option value="">全部月份</option>'+months.map(m=>'<option value="'+m+'">'+m+'月</option>').join('');renderTable()}
+function clearTimeFilter(){document.getElementById('yearFilter').value='';document.getElementById('monthFilter').value='';document.getElementById('dateFrom').value='';document.getElementById('dateTo').value='';document.getElementById('monthFilter').innerHTML='<option value="">全部月份</option>';renderTable();showToast('时间筛选已清除','')}
+function updateTimeHint(){const y=document.getElementById('yearFilter').value,m=document.getElementById('monthFilter').value,f=document.getElementById('dateFrom').value,t=document.getElementById('dateTo').value,h=document.getElementById('timeFilterHint');if(f||t)h.textContent=(f||'最早')+' ~ '+(t||'至今');else if(y||m)h.textContent=(y?y+'年':'')+(m?m+'月':'');else h.textContent=''}
+
+// ==================== VIEW ====================
+function switchView(view){currentView=view;document.querySelectorAll('.menu-item,.stat-card').forEach(e=>e.classList.remove('active'));document.querySelectorAll('[data-v="'+view+'"],[data-stat="'+view+'"]').forEach(e=>e.classList.add('active'));document.getElementById('statusFilter').value=view==='urgent'?'urgent':view;const[t,ti]=VIEW_TITLES[view]||['📋','订单列表'];document.getElementById('view-icon').textContent=t;document.getElementById('view-title').textContent=ti;document.getElementById('table-title').textContent=ti;renderTable();updateStats()}
+function sortBy(f){if(currentSort.field===f)currentSort.asc=!currentSort.asc;else{currentSort.field=f;currentSort.asc=false}renderTable()}
+
+// ==================== MODAL ====================
+function openAddModal(){document.getElementById('edit-id').value='';document.getElementById('modal-title').textContent='新建订单';document.getElementById('submit-btn').textContent='保存订单';document.getElementById('order-form').reset();document.getElementById('status').value='pending';const d=new Date(),ds=d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0'),todayOrders=orders.filter(o=>o.orderNo&&o.orderNo.includes(ds));document.getElementById('orderNo').value='PRT-'+ds+'-'+String(todayOrders.length+1).padStart(2,'0');document.getElementById('modal-overlay').classList.add('show');setTimeout(()=>document.getElementById('orderNo').focus(),100)}
+function openEditModal(id){const o=orders.find(x=>x.id===id);if(!o)return;document.getElementById('edit-id').value=o.id;document.getElementById('modal-title').textContent='编辑订单';document.getElementById('submit-btn').textContent='更新订单';document.getElementById('orderNo').value=o.orderNo;document.getElementById('customer').value=o.customer;document.getElementById('designer').value=o.designer;document.getElementById('status').value=o.status;document.getElementById('note').value=o.note||'';document.getElementById('modal-overlay').classList.add('show');setTimeout(()=>document.getElementById('orderNo').focus(),100)}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('show');document.getElementById('order-form').reset()}
+async function saveOrder(e){e.preventDefault();const id=document.getElementById('edit-id').value,data={orderNo:document.getElementById('orderNo').value.trim(),customer:document.getElementById('customer').value.trim(),designer:document.getElementById('designer').value.trim(),status:document.getElementById('status').value,note:document.getElementById('note').value.trim()};if(!data.orderNo||!data.customer||!data.designer){showToast('请填写单号、客户和设计师','');return}if(id){const idx=orders.findIndex(o=>o.id===id);if(idx!==-1){orders[idx]={...orders[idx],...data}}}else orders.push({id:genId(),...data,createdAt:new Date().toISOString().split('T')[0]});await saveToGitHub();closeModal();renderTable();updateStats();showToast(id?'订单已更新 ✅':'订单已创建 ✅','success')}
+
+// ==================== QUICK STATUS ====================
+function quickStatus(id){quickEditId=id;const o=orders.find(x=>x.id===id);if(!o)return;document.getElementById('quickInfo').textContent=o.orderNo+' · '+o.customer+' · '+o.designer;document.getElementById('quickPanel').classList.add('show');document.getElementById('quick-overlay').classList.add('show')}
+async function quickChange(status){if(quickEditId){await doPatchStatus(quickEditId,status);closeQuick()}}
+async function doPatchStatus(id,status){const idx=orders.findIndex(o=>o.id===id);if(idx===-1)return;orders[idx].status=status;await saveToGitHub();renderTable();updateStats();showToast('状态已更新：'+STATUS_LABELS[status],'success')}
+function openEditFromQuick(){const id=quickEditId;closeQuick();if(id)openEditModal(id)}
+function closeQuick(){document.getElementById('quickPanel').classList.remove('show');document.getElementById('quick-overlay').classList.remove('show');quickEditId=null}
+
+// ==================== CONFIRM ====================
+function showConfirm(t,m,e,cb){document.getElementById('confirm-title').textContent=t;document.getElementById('confirm-message').textContent=m;document.getElementById('confirm-emoji').textContent=e||'⚠️';document.getElementById('confirm-overlay').classList.add('show');confirmCb=cb}
+function execConfirm(){if(confirmCb)confirmCb();closeConfirm()}
+function closeConfirm(){document.getElementById('confirm-overlay').classList.remove('show');confirmCb=null}
+
+// ==================== EXPORT ====================
+function exportCSV(){const list=getFiltered();if(list.length===0){showToast('没有数据可导出','');return}let csv='\uFEFF单号,客户,设计师,录入日期,状态,已过天数,备注\n';list.forEach(o=>{csv+=o.orderNo+',"'+o.customer+'","'+o.designer+'",'+o.createdAt+','+STATUS_LABELS[o.status]+','+daysSince(o.createdAt)+'天,"'+(o.note||'')+'"\n'});const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='印刷跟单_'+new Date().toISOString().split('T')[0]+'.csv';a.click();URL.revokeObjectURL(url);showToast('导出成功 📥','success')}
+
+// ==================== MOBILE ====================
+function toggleMobileNav(){document.getElementById('mobileNav').classList.toggle('show')}
+
+// ==================== TOAST ====================
+function showToast(m,t){const toast=document.getElementById('toast');toast.textContent=m;toast.className='toast '+(t||'');toast.classList.add('show');setTimeout(()=>toast.classList.remove('show'),2000)}
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded',()=>{const d=new Date();document.getElementById('today-date').textContent=d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日';document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key==='n'){e.preventDefault();openAddModal()}if(e.key==='Escape'){closeModal();closeQuick();closeConfirm()}});document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal()});loadData()});
+</script>
+</body>
+</html>
