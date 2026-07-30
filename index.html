@@ -300,7 +300,8 @@ async function loadData(silent){
       if(!r.ok)throw new Error('API fetch failed: '+r.status);
       j=await r.json();
       dataSha=j.sha;
-      orders=JSON.parse(atob(j.content)).orders||[];
+      const rawJson=decodeURIComponent(escape(atob(j.content)));
+      orders=JSON.parse(rawJson).orders||[];
     }else{
       // 无 token：用 raw 读取（有 CDN 缓存，几分钟延迟）
       const r=await fetch(RAW_URL+'?t='+Date.now());
