@@ -267,10 +267,11 @@ tbody tr.row-warning:hover{background:#fef3c7}
 // ==================== GITHUB DATA STORE ====================
 const REPO = 'Crystal-design-4/print-tracker';
 const DATA_FILE = 'data.json';
-// Token is embedded for Vercel deployment. For local dev, can be overridden.
-// Token 通过 URL 参数 ?token=xxx 传入，或通过 Vercel 环境变量注入
-const TOKEN = new URLSearchParams(location.search).get('token') || 'YOUR_GITHUB_TOKEN';
-const API_BASE = `https://api.github.com/repos/${REPO}/contents/${DATA_FILE}`;
+// 读取用 raw URL（无需 token），写入用 API
+const RAW_URL = `https://raw.githubusercontent.com/${REPO}/main/${DATA_FILE}`;
+const API_URL = `https://api.github.com/repos/${REPO}/contents/${DATA_FILE}`;
+// Token 从 URL 参数获取（访问网址时带上 ?token=xxx）
+const TOKEN = new URLSearchParams(location.search).get('token') || '';
 
 let orders = [];
 let currentView = 'all';
@@ -289,13 +290,16 @@ function genId(){return 'ORD-'+Date.now().toString(36)+'-'+Math.random().toStrin
 // ==================== API ====================
 async function loadData(){
   try{
-    const r=await fetch(API_BASE,{headers:{Authorization:'token '+TOKEN}});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    const j=await r.json();
-    dataSha=j.sha;
-    const content=JSON.parse(atob(j.content));
-    orders=content.orders||[];
+    // 优先用 raw URL 读取（无需 token，避免认证问题）
+    let r=await fetch(RAW_URL+'?t='+Date.now());
+    if(!r.ok)throw new Error('raw fetch failed: '+r.status);
+    let j=await r.json();
+    orders=j.orders||[];
     if(orders.length===0)orders=seedData();
+    // 同时获取 SHA（写操作需要）
+    try{
+      if(TOKEN){r=await fetch(API_URL,{headers:{Authorization:'token '+TOKEN}});if(r.ok){j=await r.json();dataSha=j.sha}}
+    }catch(e){}
     renderTable();updateStats();
   }catch(e){
     console.error('加载失败:',e);
@@ -303,7 +307,7 @@ async function loadData(){
     try{
       const cached=localStorage.getItem('print_orders');
       if(cached){orders=JSON.parse(cached);renderTable();updateStats();showToast('离线模式 · 数据来自本地缓存','')}
-      else{orders=seedData();saveToGitHub();renderTable();updateStats()}
+      else{orders=seedData();renderTable();updateStats();showToast('离线模式 · 无网络连接','')}
     }catch(e2){document.getElementById('table-body').innerHTML='<tr><td colspan="7"><div class="empty"><div class="ee">⚠️</div><h3>无法加载数据</h3><p>请检查网络后点击刷新</p></div></td></tr>'}
   }
 }
@@ -326,7 +330,7 @@ async function saveToGitHub(){
   const body={message:'更新订单数据',content:content};
   if(dataSha)body.sha=dataSha;
   try{
-    const r=await fetch(API_BASE,{method:'PUT',headers:{Authorization:'token '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await fetch(API_URL,{method:'PUT',headers:{Authorization:'token '+TOKEN,'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await r.json();
     if(j.content)dataSha=j.content.sha;
     // Also cache locally
