@@ -68,7 +68,7 @@
       "orderNo": "PRT-2026-008",
       "customer": "星辰科技",
       "designer": "赵设计",
-      "status": "cancelled",
+      "status": "printing",
       "createdAt": "2026-07-07",
       "note": "展会背景板设计"
     },
@@ -113,7 +113,7 @@
       "orderNo": "PRT-20260730-01",
       "customer": "陶明",
       "designer": "大鱼",
-      "status": "pending",
+      "status": "cancelled",
       "note": "氨基酸壶贴",
       "createdAt": "2026-07-30"
     }
