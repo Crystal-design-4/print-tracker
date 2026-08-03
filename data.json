@@ -179,6 +179,15 @@
       "status": "pending",
       "note": "满壳宁200g--改",
       "createdAt": "2026-08-03 02:36:46"
+    },
+    {
+      "id": "ORD-mscmd22l-6DZ1",
+      "orderNo": "PRT-20260803-04",
+      "customer": "刘飞",
+      "designer": "小许",
+      "status": "confirmed",
+      "note": "农斯夫膨大鼓粒聚能肽-标签加限量指标",
+      "createdAt": "2026-08-03 02:37:50"
     }
   ]
 }
